@@ -1,4 +1,4 @@
-from django.http import JsonResponse
+
 from rest_framework import  status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,34 +11,23 @@ from backend.models.allmodels import (
     QuizScore,
 )
 
+from backend.serializers.clientdashboardserializers import CourseEnrollmentSerializer
+
 class DisplayClientCourseProgressView(ClientMixin,APIView):
 
-    """
-    GET request
-    for user in request, if he has data in course enrollment table
-    display if the user in request has active enrollment for the course
-    display:
-        completed_quiz_count
-    """
     permission_classes = [ClientPermission]
     def get(self, request):
         try:
-            # # # Check if the user has client admin privileges
-            # if not self.has_client_privileges(request):
-            #     return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
             user_id = request.query_params.get('user_id')
 
-            # Validate request data
             if not user_id:
                 return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Check if the user has active enrollment for any course
             course_enrollments = CourseEnrollment.objects.filter(user_id=user_id, active=True)
 
             if not course_enrollments:
                 return Response({'message': 'No active enrollment found for the user'}, status=status.HTTP_404_NOT_FOUND)
 
-            # Display course progress for each active enrollment
             progress_data = []
             for enrollment in course_enrollments:
                 quiz_score = QuizScore.objects.filter(course_id=enrollment.course_id, enrolled_user_id=user_id).first()
@@ -48,7 +37,6 @@ class DisplayClientCourseProgressView(ClientMixin,APIView):
                     total_quiz_count = quiz_score.total_quizzes_per_course
                     completed_quiz_count = quiz_score.completed_quiz_count
 
-                    # Determine completion_status or in_progress_status based on completed quiz count
                     if total_quiz_count == completed_quiz_count:
                         completion_status = "completed"
                   
@@ -66,11 +54,11 @@ class DisplayClientCourseProgressView(ClientMixin,APIView):
                         'completed_quiz_count': quiz_score.completed_quiz_count,
                         'total_quizzes_per_course': quiz_score.total_quizzes_per_course,
                         'progress_percentage': progress_percentage,
-                         'completion_status': completion_status
-                       
+                        'completion_status': completion_status
                     })
 
-            return Response({'progress': progress_data}, status=status.HTTP_200_OK)
+            serializer = CourseEnrollmentSerializer(course_enrollments, many=True)
+            return Response({'progress': progress_data, 'enrollments': serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
