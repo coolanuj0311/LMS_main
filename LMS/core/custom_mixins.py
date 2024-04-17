@@ -1,7 +1,6 @@
+import json
 from rest_framework import permissions
 from backend.models.coremodels import UserRolePrivileges
-import json
-
 
 '''this is how base permission works :
 
@@ -16,7 +15,6 @@ class IsAuthenticated(BasePermission):
         return bool(request.user and request.user.is_authenticated)
 
 '''
-
 '''
 allowed_resources:
 1- LMS
@@ -27,58 +25,118 @@ allowed_resources:
 6- Dashboard
 '''
 
+# class BaseAccessMixin:
+#     permission_classes = [permissions.IsAuthenticated]
+#     allowed_resources = set()
+    
+#     def has_access(self, request):
+#         user = request.user
+#         user_privileges = UserRolePrivileges.objects.filter(role=user.role)
+#         privileged_resources = {privilege.resource.id for privilege in user_privileges}
+        
+#         return self.allowed_resources == privileged_resources
+
+# class SuperAdminMixin(BaseAccessMixin):
+#     allowed_resources = {1, 2, 4, 5, 6}
+
+# class ClientAdminMixin(BaseAccessMixin):
+#     allowed_resources = {1, 3, 4, 6}
+
+# class ClientMixin(BaseAccessMixin):
+#     allowed_resources = {1, 4, 6}
+
+import json
+from django.core.exceptions import ObjectDoesNotExist  # Import the appropriate exception
+
 class SuperAdminMixin:
     # permission_classes = [permissions.IsAuthenticated]
 
     def has_super_admin_privileges(self, request):
-        super_admin_resources = {1, 2, 4, 5, 6}  
-        
-        # Check if the user is authenticated
-        # if not request.user:
-        #     return False
-        
-        # user_privileges = UserRolePrivileges.objects.filter(role=request.user.role)
-        user = request.data.get('user')
-        print("super")
-        user_privileges = UserRolePrivileges.objects.filter(role= user['role']) # role= user.role
-        print(user_privileges)
-        print("super")
-        privileged_resources = {privilege.resource.id for privilege in user_privileges}
-        print(privileged_resources)
-        return super_admin_resources == privileged_resources
+        try:
+            user_header = request.headers.get("user")
+            if user_header:
+                user = json.loads(user_header)
+                role_id = user.get("role")
+
+            super_admin_resources = {1, 2, 4, 5, 6}  
+
+            # user = request.user
+            user_privileges = UserRolePrivileges.objects.filter(role=role_id) # role= user.role
+            print(user_privileges)
+            privileged_resources = {privilege.resource.id for privilege in user_privileges}
+            print(privileged_resources)
+            print('super admin')
+
+            return super_admin_resources == privileged_resources
+
+        except (json.JSONDecodeError, ObjectDoesNotExist, Exception) as e:
+            print(f"An error occurred: {e}")
+            return False  # Return False indicating failure
+
+
     
+import json
+from django.core.exceptions import ObjectDoesNotExist  # Import the appropriate exception
 class ClientAdminMixin:
     # permission_classes = [permissions.IsAuthenticated]
     
     def has_client_admin_privileges(self, request):
-        client_admin_resources = {1, 3, 4, 6}  
-        
-        # # Check if the user is authenticated
-        # if not request.user:
-        #     return False
-        
-        # user_privileges = UserRolePrivileges.objects.filter(role=request.user.role)
-        user = request.data.get('user')
-        print("client admin")
-        user_privileges = UserRolePrivileges.objects.filter(role= user['role']) # role= user.role
-        privileged_resources = {privilege.resource.id for privilege in user_privileges}
-        
-        return client_admin_resources == privileged_resources
+        try:
+            user_header = request.data.get("user")
+            if user_header:
+                role_id = user_header.get("role")
+
+            client_admin_resources = {1}  
+            
+            user = request.user
+            print(user)
+
+            user_privileges = None
+            try:
+                user_privileges = UserRolePrivileges.objects.filter(role=role_id)
+            except ObjectDoesNotExist as e:
+                print(f"Error fetching user privileges: {e}")
+                return False  # Return False indicating failure
+
+            privileged_resources = {privilege.resource.id for privilege in user_privileges}
+            print(privileged_resources)
+            print('client admin')
+            
+            return client_admin_resources == privileged_resources
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return False  # Return False indicating failure
+
+
     
 class ClientMixin:
     # permission_classes = [permissions.IsAuthenticated]
     
     def has_client_privileges(self, request):
-        client_resources = {1, 4, 6} 
-        
-        # Check if the user is authenticated
-        if not request.user:
-            return False
-        
-        user_privileges = UserRolePrivileges.objects.filter(role=request.user.role)
-        # user = request.user
-        # user_privileges = UserRolePrivileges.objects.filter(role= user.role)
-        privileged_resources = {privilege.resource.id for privilege in user_privileges}
+        try:
+            user_header = request.data.get("user")
+            if user_header:
+                role_id = user_header.get("role")
 
-        return client_resources == privileged_resources
+            client_resources = {2}
+            
+            user = request.user
+            print(user)
 
+            user_privileges = None
+            try:
+                user_privileges = UserRolePrivileges.objects.filter(role=role_id)
+            except ObjectDoesNotExist as e:
+                print(f"Error fetching user privileges: {e}")
+                return False  # Return False indicating failure
+
+            privileged_resources = {privilege.resource.id for privilege in user_privileges}
+            print(privileged_resources)
+            print('client')
+            
+            return client_resources == privileged_resources
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return False  # Return False indicating failure
