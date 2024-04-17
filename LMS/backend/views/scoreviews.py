@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Max
 
+from core.custom_permissions import ClientAdminPermission, SuperAdminPermission
 from core.custom_mixins import ClientAdminMixin
 
 from backend.models.allmodels import (
@@ -36,11 +37,12 @@ class CreateCourseCompletionStatusPerUserView(ClientAdminMixin, APIView):
         status = (default='not started')
         created_at = (auto_now_add=True)
     """
+    permission_classes = [ClientAdminPermission]
     def post(self, request):
         try:
             # Check if the user has client admin privileges
-            if not self.has_client_admin_privileges(request):
-                return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
+            # if not self.has_client_admin_privileges(request):
+            #     return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
             
             course_ids = request.data.get('course_id', [])
             user_ids = request.data.get('user_id', [])
@@ -85,12 +87,13 @@ class UpdateCompleteQuizCountView(ClientAdminMixin, APIView):
     while updating instance:
         completed_quiz_count = count of distinct completed quizzes
     """
+    permission_classes = [ClientAdminPermission]
 
     def post(self, request):
         try:
             # Check if the user has client admin privileges
-            if not self.has_client_admin_privileges(request):
-                return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
+            # if not self.has_client_admin_privileges(request):
+            #     return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
 
             course_id = request.data.get('course_id')
             user_id = request.data.get('user_id')
@@ -135,11 +138,12 @@ class CreateQuizScoreView(ClientAdminMixin,APIView):
         completed_quiz_count = by default 0
         total_score_per_course = (default=0)
     """
+    permission_classes = [ClientAdminPermission]
     def post(self, request):
         try:
             # Check if the user has client admin privileges
-            if not self.has_client_admin_privileges(request):
-                return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
+            # if not self.has_client_admin_privileges(request):
+            #     return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
             course_ids = request.data.get('course_id', [])
             user_ids = request.data.get('user_id', [])
 
@@ -198,11 +202,13 @@ class UpdateTotalScorePerCourseView(ClientAdminMixin,APIView):
         total_score_per_course -> calculate for it 
         score=current_score/question_list_order.split().count()
     """
+    permission_classes = [ClientAdminPermission] #IsAuthenticated, 
+
     def post(self, request):
         try:
             # Check if the user has client admin privileges
-            if not self.has_client_admin_privileges(request):
-                return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
+            # if not self.has_client_admin_privileges(request):
+            #     return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
             course_id = request.data.get('course_id')
             user_id = request.data.get('user_id')
 
@@ -265,12 +271,15 @@ class UpdateCourseCompletionStatusPerUserView(ClientAdminMixin,APIView):
         completion_status=False and in_progress_status =True
         
     """
+    permission_classes = [ClientAdminPermission]
     @transaction.atomic
     def post(self, request):
+        
         try:
-            # Check if the user has client admin privileges
-            if not self.has_client_admin_privileges(request):
-                return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
+           
+            # # Check if the user has client admin privileges
+            # if not self.has_client_admin_privileges(request):
+            #     return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
             course_id = request.data.get('course_id')
             user_id = request.data.get('user_id')
 
