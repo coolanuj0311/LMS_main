@@ -21,7 +21,7 @@ from django.db.models import Max
 from core.custom_mixins import ClientAdminMixin, ClientMixin, SuperAdminMixin
 #exam in main model "backend"
 # from backend.models.allmodels import(
-from exam.models.allmodels import (
+from backend.models.allmodels import (
     CourseCompletionStatusPerUser,
     CourseEnrollment,
     CourseStructure,
