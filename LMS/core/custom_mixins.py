@@ -1,6 +1,8 @@
 import json
 from rest_framework import permissions
 from backend.models.coremodels import UserRolePrivileges
+import json
+from django.core.exceptions import ObjectDoesNotExist  # Import the appropriate exception
 
 '''this is how base permission works :
 
@@ -45,9 +47,6 @@ allowed_resources:
 # class ClientMixin(BaseAccessMixin):
 #     allowed_resources = {1, 4, 6}
 
-import json
-from django.core.exceptions import ObjectDoesNotExist  # Import the appropriate exception
-
 class SuperAdminMixin:
     # permission_classes = [permissions.IsAuthenticated]
 
@@ -73,10 +72,6 @@ class SuperAdminMixin:
             print(f"An error occurred: {e}")
             return False  # Return False indicating failure
 
-
-    
-import json
-from django.core.exceptions import ObjectDoesNotExist  # Import the appropriate exception
 class ClientAdminMixin:
     # permission_classes = [permissions.IsAuthenticated]
     
@@ -108,8 +103,6 @@ class ClientAdminMixin:
             print(f"An error occurred: {e}")
             return False  # Return False indicating failure
 
-
-    
 class ClientMixin:
     # permission_classes = [permissions.IsAuthenticated]
     
