@@ -1,31 +1,22 @@
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from rest_framework import status
-
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db.models import Max
 
-from backend.serializers.scoreserializers import CourseCompletionStatusSerializer
 from core.custom_permissions import ClientAdminPermission
 from core.custom_mixins import ClientAdminMixin
-
+from backend.serializers.scoreserializers import CourseCompletionStatusSerializer
 from backend.models.allmodels import (
     CourseCompletionStatusPerUser,
     CourseStructure,
     QuizAttemptHistory,
     QuizScore,
 )
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
-from core.custom_permissions import ClientAdminPermission
-from core.custom_mixins import ClientAdminMixin
-from backend.models.allmodels import CourseCompletionStatusPerUser
 
 
 
@@ -264,42 +255,34 @@ class UpdateTotalScorePerCourseView(ClientAdminMixin,APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class UpdateCourseCompletionStatusPerUserView(ClientAdminMixin,APIView):
+
+
+class UpdateCourseCompletionStatusPerUserView(ClientAdminMixin, APIView):
     """
-    POST request
-    triggers when 
+    POST request triggered when 
     total_quizzes_per_course = completed_quiz_count in quiz score for that user in request
     if total_quizzes_per_course == completed_quiz_count:
         completion_status=True and in_progress_status =False
     if total_quizzes_per_course > completed_quiz_count:
         completion_status=False and in_progress_status =True
-        
     """
     permission_classes = [ClientAdminPermission]
+
     @transaction.atomic
     def post(self, request):
-        
         try:
-           
-            # # Check if the user has client admin privileges
-            # if not self.has_client_admin_privileges(request):
-            #     return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
             course_id = request.data.get('course_id')
             user_id = request.data.get('user_id')
 
-            # Validate request data
             if not (course_id and user_id):
                 return Response({'error': 'course_id and user_id are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Retrieve or create CourseCompletionStatus record
             course_completion_status, created = CourseCompletionStatusPerUser.objects.get_or_create(
                 course_id=course_id, enrolled_user_id=user_id
             )
 
-            # Retrieve quiz score record for the user and course
             quiz_score = get_object_or_404(QuizScore, course_id=course_id, enrolled_user_id=user_id)
 
-            # Update completion status
             if quiz_score.total_quizzes_per_course == quiz_score.completed_quiz_count:
                 course_completion_status.status = "completed"
                 
@@ -308,12 +291,12 @@ class UpdateCourseCompletionStatusPerUserView(ClientAdminMixin,APIView):
             else:
                 course_completion_status.status = "not_started"
 
-               
-
-            # Save the updated CourseCompletionStatus record
             course_completion_status.save()
 
-            return Response({'message': 'Course completion status updated successfully'}, status=status.HTTP_200_OK)
+            # Serialize the updated course completion status
+            serializer = CourseCompletionStatusSerializer(course_completion_status)
+            return Response({'message': 'Course completion status updated successfully', 'course_completion_status': serializer.data}, status=status.HTTP_200_OK)
+        
         except Exception as e:
             if isinstance(e, QuizScore.DoesNotExist):
                 return Response({'error': 'Quiz score record not found'}, status=status.HTTP_404_NOT_FOUND)
