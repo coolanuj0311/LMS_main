@@ -107,7 +107,7 @@ class UpdateCompleteQuizCountView(ClientAdminMixin, APIView):
 
             # Serialize the QuizScore object
             serializer = QuizScoreSerializer(quiz_score)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({'message': 'complete quiz count updated successfully', 'quiz_details': serializer.data}, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -165,7 +165,7 @@ class CreateQuizScoreView(ClientAdminMixin, APIView):
             QuizScore.objects.bulk_create(quiz_scores)
 
             serializer = QuizScoreSerializer(quiz_scores, many=True)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response({'message': 'quiz score created successfully', 'quiz_score': serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -227,7 +227,7 @@ class UpdateTotalScorePerCourseView(ClientAdminMixin, APIView):
             quiz_score.save()
 
             serializer = QuizScoreSerializer(quiz_score)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({'message': 'total score per course updated successfully', 'total_score': serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
