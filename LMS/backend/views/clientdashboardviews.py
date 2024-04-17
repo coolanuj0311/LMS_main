@@ -2,6 +2,8 @@ from django.http import JsonResponse
 from rest_framework import  status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from core.custom_permissions import ClientPermission
 from core.custom_mixins import ClientMixin
 from backend.models.allmodels import (
     CourseCompletionStatusPerUser,
@@ -18,11 +20,12 @@ class DisplayClientCourseProgressView(ClientMixin,APIView):
     display:
         completed_quiz_count
     """
+    permission_classes = [ClientPermission]
     def get(self, request):
         try:
-            # # Check if the user has client admin privileges
-            if not self.has_client_privileges(request):
-                return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
+            # # # Check if the user has client admin privileges
+            # if not self.has_client_privileges(request):
+            #     return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
             user_id = request.query_params.get('user_id')
 
             # Validate request data
@@ -75,12 +78,13 @@ class CountCoursesStatusView(ClientMixin,APIView):
     """
     GET request to count the number of active enrollments and course completion status for a user.
     """
-
+   
+    permission_classes = [ClientPermission]
     def get(self, request):
         try:
-            # Check if the user has client admin privileges
-            if not self.has_client_privileges(request):
-                return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
+            # # Check if the user has client admin privileges
+            # if not self.has_client_privileges(request):
+            #     return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
             user_id = request.query_params.get('user_id')
             if not user_id:
                 return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
