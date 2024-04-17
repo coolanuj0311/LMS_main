@@ -4,9 +4,9 @@ from backend.models.allmodels import CourseEnrollment, CourseCompletionStatusPer
 class CourseEnrollmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseEnrollment
-        fields = ['course_id', 'user_id', 'active']
+        fields = ['id', 'user_id', 'course_id', 'active']
 
 class CourseCompletionStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseCompletionStatusPerUser
-        fields = ['enrolled_user_id', 'status', 'active']
+        fields = ['id', 'enrolled_user_id', 'status', 'active']
