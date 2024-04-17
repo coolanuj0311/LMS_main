@@ -1,32 +1,11 @@
-import json
-from django.views import View
-import pandas as pd
-import requests
-from django.contrib import messages
-from django.core.exceptions import PermissionDenied
-from django.db import transaction
-from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render, redirect
-from django.utils import timezone
-from django.utils.decorators import method_decorator
-from rest_framework import generics, status
-from rest_framework.exceptions import NotFound, ValidationError
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import  status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db.models import Max
-#custom_authentication in main model is "core"
-# from core.custom_mixins import (
-from core.custom_mixins import ClientAdminMixin, ClientMixin, SuperAdminMixin
-#exam in main model "backend"
-# from backend.models.allmodels import(
+from core.custom_mixins import ClientMixin
 from backend.models.allmodels import (
     CourseCompletionStatusPerUser,
     CourseEnrollment,
-    CourseStructure,
-    Quiz,
-    QuizAttemptHistory,
     QuizScore,
 )
 
