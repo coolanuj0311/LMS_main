@@ -1,6 +1,5 @@
 from django.db import transaction
 from django.db.models import Q
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
@@ -10,7 +9,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Max
 
-from core.custom_permissions import ClientAdminPermission, SuperAdminPermission
+from backend.serializers.scoreserializers import CourseCompletionStatusSerializer
+from core.custom_permissions import ClientAdminPermission
 from core.custom_mixins import ClientAdminMixin
 
 from backend.models.allmodels import (
@@ -19,6 +19,13 @@ from backend.models.allmodels import (
     QuizAttemptHistory,
     QuizScore,
 )
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from core.custom_permissions import ClientAdminPermission
+from core.custom_mixins import ClientAdminMixin
+from backend.models.allmodels import CourseCompletionStatusPerUser
 
 
 
@@ -38,32 +45,24 @@ class CreateCourseCompletionStatusPerUserView(ClientAdminMixin, APIView):
         created_at = (auto_now_add=True)
     """
     permission_classes = [ClientAdminPermission]
+
     def post(self, request):
         try:
-            # Check if the user has client admin privileges
-            # if not self.has_client_admin_privileges(request):
-            #     return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
-            
             course_ids = request.data.get('course_id', [])
             user_ids = request.data.get('user_id', [])
 
-            # Validate request data
             if not course_ids or not user_ids:
                 return Response({'error': 'course_id and user_id lists are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Additional validation
             if not all(isinstance(course_id, int) for course_id in course_ids):
                 return Response({'error': 'Invalid course_id format'}, status=status.HTTP_400_BAD_REQUEST)
             if not all(isinstance(user_id, int) for user_id in user_ids):
                 return Response({'error': 'Invalid user_id format'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Create course completion status records only if they don't already exist
             course_completion_statuses = []
             for course_id in course_ids:
                 for user_id in user_ids:
-                    # Check if a record already exists for this combination
                     if not CourseCompletionStatusPerUser.objects.filter(Q(course_id=course_id) & Q(enrolled_user_id=user_id)).exists():
-                        # Create a new record only if it doesn't exist
                         course_completion_status = CourseCompletionStatusPerUser(
                             enrolled_user_id=user_id,
                             course_id=course_id,
@@ -71,12 +70,17 @@ class CreateCourseCompletionStatusPerUserView(ClientAdminMixin, APIView):
                         )
                         course_completion_statuses.append(course_completion_status)
 
-            # Save course completion status records to the database
-            CourseCompletionStatusPerUser.objects.bulk_create(course_completion_statuses)
+            # Serialize the data
+            serializer = CourseCompletionStatusSerializer(data=course_completion_statuses, many=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'message': 'Course completion statuses created successfully'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response({'message': 'Course completion statuses created successfully'}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
     
