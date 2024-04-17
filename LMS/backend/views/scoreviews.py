@@ -16,7 +16,7 @@ from backend.models.allmodels import (
     QuizAttemptHistory,
     QuizScore,
 )
-
+from backend.serializers.scoreserializers import QuizScoreSerializer
 
 
 
@@ -189,7 +189,8 @@ class CreateQuizScoreView(ClientAdminMixin,APIView):
           return 0  # Return 0 in case of error
 
 
-class UpdateTotalScorePerCourseView(ClientAdminMixin,APIView):
+
+class UpdateTotalScorePerCourseView(ClientAdminMixin, APIView):
     """
     POST request
     triggered when quiz attempt history for that course, that user have completed = true 
@@ -197,23 +198,15 @@ class UpdateTotalScorePerCourseView(ClientAdminMixin,APIView):
         total_score_per_course -> calculate for it 
         score=current_score/question_list_order.split().count()
     """
-    permission_classes = [ClientAdminPermission] #IsAuthenticated, 
+    permission_classes = [ClientAdminPermission]
 
     def post(self, request):
         try:
-            # Check if the user has client admin privileges
-            # if not self.has_client_admin_privileges(request):
-            #     return JsonResponse({"error": "You do not have permission to access this resource"}, status=403)
             course_id = request.data.get('course_id')
             user_id = request.data.get('user_id')
 
-            # Validate request data
             if not (course_id and user_id):
                 return Response({'error': 'course_id and user_id are required'}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Get unique instances of completed quizzes for the user and course
-            
-           
 
             last_attempted_quizzes = (
                 QuizAttemptHistory.objects.filter(course_id=course_id, enrolled_user_id=user_id, complete=True)
@@ -229,30 +222,26 @@ class UpdateTotalScorePerCourseView(ClientAdminMixin,APIView):
                 created_at__in=[quiz['last_attempt'] for quiz in last_attempted_quizzes]
             )
 
-            # Calculate total score for the user and course
             total_score = 0
             for quiz_attempt in unique_quizzes:
                 total_score += (quiz_attempt.current_score / (len(quiz_attempt.question_list_order.split(','))-1))
 
-
-            # Get total quizzes for the course
             total_quizzes = QuizScore.objects.get(course_id=course_id, enrolled_user_id=user_id).total_quizzes_per_course
-           
 
-            # Calculate average score
             if total_quizzes > 0:
                 average_score = (total_score / total_quizzes) * 100
             else:
                 average_score = 0
 
-            # Update total_score_per_course for the corresponding record
             quiz_score, created = QuizScore.objects.get_or_create(course_id=course_id, enrolled_user_id=user_id, defaults={'total_score_per_course': 0})
             quiz_score.total_score_per_course = average_score
             quiz_score.save()
 
-            return Response({'message': 'Total score per course updated successfully'}, status=status.HTTP_200_OK)
+            serializer = QuizScoreSerializer(quiz_score)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 
