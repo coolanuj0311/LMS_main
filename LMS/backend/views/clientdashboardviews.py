@@ -9,7 +9,7 @@ from backend.models.allmodels import (
     CourseEnrollment,
     QuizScore,
 )
-from backend.serializers.clientdashboardserializers import CourseEnrollmentSerializer
+from backend.serializers.clientdashboardserializers import CountCoursesStatusSerializer, CourseEnrollmentSerializer
 
 
 class DisplayClientCourseProgressView(APIView):
@@ -61,12 +61,11 @@ class DisplayClientCourseProgressView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-
+        
 class CountCoursesStatusView(APIView):
     """
     GET request to count the number of active enrollments and course completion status for a user.
     """
-   
     permission_classes = [ClientPermission]
 
     def get(self, request):
@@ -83,13 +82,17 @@ class CountCoursesStatusView(APIView):
             in_progress_courses_count = CourseCompletionStatusPerUser.objects.filter(enrolled_user_id=user_id, status='in_progress', active=True).count()
             not_started_courses_count = CourseCompletionStatusPerUser.objects.filter(enrolled_user_id=user_id, status='not_started', active=True).count()
 
-            return Response({
+            # Create serializer instance with counts
+            serializer = CountCoursesStatusSerializer({
                 'active_enrollments_count': active_enrollments_count,
                 'completed_courses_count': completed_courses_count,
                 'in_progress_courses_count': in_progress_courses_count,
                 'not_started_courses_count': not_started_courses_count
-            }, status=status.HTTP_200_OK)
+            })
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
