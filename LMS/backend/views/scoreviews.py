@@ -58,19 +58,15 @@ class CourseCompletionStatusView(APIView):
                         updated_at=timezone.now(),
                         active=True,
                         status="not_started"
-
                     )
                     course_completion_statuses.append(course_completion_status)
 
-            CourseCompletionStatusPerUser.objects.bulk_create(course_completion_status)
+            CourseCompletionStatusPerUser.objects.bulk_create(course_completion_statuses)
 
-            serializer = CourseCompletionStatusSerializer(data=course_completion_status, many=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({'message': 'course completion status created successfully', 'course_completion_status': serializer.data}, status=status.HTTP_200_OK)
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+         
 
+            serializer =CourseCompletionStatusSerializer(course_completion_statuses, many=True)
+            return Response({'message': 'course completion status created successfully', 'completion_status': serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
