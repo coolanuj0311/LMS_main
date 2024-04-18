@@ -19,6 +19,10 @@ from backend.models.allmodels import (
 from backend.serializers.scoreserializers import QuizScoreSerializer
 
 
+
+
+from backend.models.allmodels import CourseEnrollment
+
 class CourseCompletionStatusView(APIView):
     """
     allowed for client admin
@@ -47,6 +51,10 @@ class CourseCompletionStatusView(APIView):
             course_completion_statuses = []
             for course_id in course_ids:
                 for user_id in user_ids:
+                    # Check if the user is enrolled in the course
+                    if not CourseEnrollment.objects.filter(course_id=course_id, user_id=user_id).exists():
+                        continue
+
                     existing_entry = CourseCompletionStatusPerUser.objects.filter(course_id=course_id, enrolled_user_id=user_id).first()
                     if existing_entry:
                         continue
@@ -63,12 +71,14 @@ class CourseCompletionStatusView(APIView):
 
             CourseCompletionStatusPerUser.objects.bulk_create(course_completion_statuses)
 
-         
-
-            serializer =CourseCompletionStatusSerializer(course_completion_statuses, many=True)
+            serializer = CourseCompletionStatusSerializer(course_completion_statuses, many=True)
             return Response({'message': 'course completion status created successfully', 'completion_status': serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+      
+
 
     
 class CompleteQuizCountView(APIView):
@@ -141,6 +151,8 @@ class QuizScoreView(APIView):
                 total_quizzes_per_course = self.get_total_quizzes_per_course(course_id)
 
                 for user_id in user_ids:
+                    if not CourseEnrollment.objects.filter(course_id=course_id, user_id=user_id).exists():
+                        continue
                     existing_score = QuizScore.objects.filter(course_id=course_id, enrolled_user_id=user_id).first()
 
                     if existing_score:
