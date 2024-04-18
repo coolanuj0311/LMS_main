@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.custom_permissions import ClientAdminPermission
+from core.custom_permissions import ClientAdminPermission, ClientPermission, SuperAdminOrPostOnly, SuperAdminPermission
 from core.custom_mixins import ClientAdminMixin
 from backend.serializers.scoreserializers import CourseCompletionStatusSerializer
 from backend.models.allmodels import (
@@ -20,7 +20,7 @@ from backend.serializers.scoreserializers import QuizScoreSerializer
 
 
 
-class CourseCompletionStatusView(ClientAdminMixin, APIView):
+class CourseCompletionStatusView(APIView):
     """
     allowed for client admin
     POST request
@@ -75,14 +75,14 @@ class CourseCompletionStatusView(ClientAdminMixin, APIView):
 
 
     
-class CompleteQuizCountView(ClientAdminMixin, APIView):
+class CompleteQuizCountView(APIView):
     """
     POST request triggered when quiz attempt history for that course, that user have completed = true,
     if set of quiz, course, user doesn't already have completed = true in table
     while updating instance:
         completed_quiz_count = count of distinct completed quizzes
     """
-    permission_classes = [ClientAdminPermission]
+    permission_classes = [SuperAdminOrPostOnly]
 
     def post(self, request):
         try:
@@ -114,7 +114,7 @@ class CompleteQuizCountView(ClientAdminMixin, APIView):
 
         
 
-class QuizScoreView(ClientAdminMixin, APIView):
+class QuizScoreView(APIView):
     """
     allowed for client admin
     POST request
@@ -179,7 +179,7 @@ class QuizScoreView(ClientAdminMixin, APIView):
 
 
 
-class TotalScorePerCourseView(ClientAdminMixin, APIView):
+class TotalScorePerCourseView(APIView):
     """
     POST request
     triggered when quiz attempt history for that course, that user have completed = true 
@@ -187,7 +187,7 @@ class TotalScorePerCourseView(ClientAdminMixin, APIView):
         total_score_per_course -> calculate for it 
         score=current_score/question_list_order.split().count()
     """
-    permission_classes = [ClientAdminPermission]
+    permission_classes = [SuperAdminOrPostOnly]
 
     def post(self, request):
         try:
@@ -235,7 +235,7 @@ class TotalScorePerCourseView(ClientAdminMixin, APIView):
 
 
 
-class CourseCompletionStatusPerUserView(ClientAdminMixin, APIView):
+class CourseCompletionStatusPerUserView(APIView):
     """
     POST request triggered when 
     total_quizzes_per_course = completed_quiz_count in quiz score for that user in request
@@ -244,7 +244,7 @@ class CourseCompletionStatusPerUserView(ClientAdminMixin, APIView):
     if total_quizzes_per_course > completed_quiz_count:
         completion_status=False and in_progress_status =True
     """
-    permission_classes = [ClientAdminPermission]
+    permission_classes = [SuperAdminOrPostOnly]
 
     @transaction.atomic
     def post(self, request):
