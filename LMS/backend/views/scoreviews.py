@@ -20,7 +20,7 @@ from backend.serializers.scoreserializers import QuizScoreSerializer
 
 
 
-class CreateCourseCompletionStatusPerUserView(ClientAdminMixin, APIView):
+class CourseCompletionStatusView(ClientAdminMixin, APIView):
     """
     allowed for client admin
     POST request
@@ -75,7 +75,7 @@ class CreateCourseCompletionStatusPerUserView(ClientAdminMixin, APIView):
 
 
     
-class UpdateCompleteQuizCountView(ClientAdminMixin, APIView):
+class CompleteQuizCountView(ClientAdminMixin, APIView):
     """
     POST request triggered when quiz attempt history for that course, that user have completed = true,
     if set of quiz, course, user doesn't already have completed = true in table
@@ -114,7 +114,7 @@ class UpdateCompleteQuizCountView(ClientAdminMixin, APIView):
 
         
 
-class CreateQuizScoreView(ClientAdminMixin, APIView):
+class QuizScoreView(ClientAdminMixin, APIView):
     """
     allowed for client admin
     POST request
@@ -179,7 +179,7 @@ class CreateQuizScoreView(ClientAdminMixin, APIView):
 
 
 
-class UpdateTotalScorePerCourseView(ClientAdminMixin, APIView):
+class TotalScorePerCourseView(ClientAdminMixin, APIView):
     """
     POST request
     triggered when quiz attempt history for that course, that user have completed = true 
@@ -235,7 +235,7 @@ class UpdateTotalScorePerCourseView(ClientAdminMixin, APIView):
 
 
 
-class UpdateCourseCompletionStatusPerUserView(ClientAdminMixin, APIView):
+class CourseCompletionStatusPerUserView(ClientAdminMixin, APIView):
     """
     POST request triggered when 
     total_quizzes_per_course = completed_quiz_count in quiz score for that user in request
