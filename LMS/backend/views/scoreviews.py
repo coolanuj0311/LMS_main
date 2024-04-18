@@ -8,7 +8,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.custom_permissions import ClientAdminPermission, ClientPermission, SuperAdminOrPostOnly, SuperAdminPermission
-from core.custom_mixins import ClientAdminMixin
 from backend.serializers.scoreserializers import CourseCompletionStatusSerializer
 from backend.models.allmodels import (
     CourseCompletionStatusPerUser,
@@ -17,10 +16,6 @@ from backend.models.allmodels import (
     QuizScore,
 )
 from backend.serializers.scoreserializers import QuizScoreSerializer
-
-
-
-
 from backend.models.allmodels import CourseEnrollment
 
 class CourseCompletionStatusView(APIView):
@@ -73,48 +68,6 @@ class CourseCompletionStatusView(APIView):
 
             serializer = CourseCompletionStatusSerializer(course_completion_statuses, many=True)
             return Response({'message': 'course completion status created successfully', 'completion_status': serializer.data}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-      
-
-
-    
-class CompleteQuizCountView(APIView):
-    """
-    POST request triggered when quiz attempt history for that course, that user have completed = true,
-    if set of quiz, course, user doesn't already have completed = true in table
-    while updating instance:
-        completed_quiz_count = count of distinct completed quizzes
-    """
-    permission_classes = [SuperAdminOrPostOnly]
-
-    def post(self, request):
-        try:
-            course_id = request.data.get('course_id')
-            user_id = request.data.get('user_id')
-
-            # Validate request data
-            if not (course_id and user_id):
-                return Response({'error': 'course_id and user_id are required'}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Count distinct completed quizzes for the user and course
-            completed_quizzes_count = QuizAttemptHistory.objects.filter(course_id=course_id, enrolled_user_id=user_id, complete=True).values('quiz_id').distinct().count()
-
-            # Update completed_quiz_count for the corresponding record
-            quiz_score, created = QuizScore.objects.get_or_create(
-                course_id=course_id,
-                enrolled_user_id=user_id,
-                defaults={'completed_quiz_count': 0}
-            )
-            quiz_score.completed_quiz_count = completed_quizzes_count
-            quiz_score.save()
-
-            # Serialize the QuizScore object
-            serializer = QuizScoreSerializer(quiz_score)
-            return Response({'message': 'complete quiz count updated successfully', 'quiz_details': serializer.data}, status=status.HTTP_200_OK)
-
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -184,64 +137,74 @@ class QuizScoreView(APIView):
         except Exception as e:
             return 0
 
-
-
-
-class TotalScorePerCourseView(APIView):
+class QuizScorePerCourseView(APIView):
     """
     POST request
-    triggered when quiz attempt history for that course, that user have completed = true 
-    while updating instance:
-        total_score_per_course -> calculate for it 
-        score=current_score/question_list_order.split().count()
+    triggered after quiz attempt history for a course, where user has completed = true.
+    Update metrics including completed_quiz_count and total_score_per_course.
     """
     permission_classes = [SuperAdminOrPostOnly]
 
     def post(self, request):
         try:
-            course_id = request.data.get('course_id')
-            user_id = request.data.get('user_id')
+            course_ids = request.data.get('course_id', [])
+            user_ids = request.data.get('user_id', [])
 
-            if not (course_id and user_id):
-                return Response({'error': 'course_id and user_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+            if not (course_ids and user_ids):
+                return Response({'error': 'course_id and user_id lists are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-            last_attempted_quizzes = (
-                QuizAttemptHistory.objects.filter(course_id=course_id, enrolled_user_id=user_id, complete=True)
-                .values('quiz_id')
-                .annotate(last_attempt=Max('created_at'))
-                .order_by('-last_attempt')
-            )
+            for course_id in course_ids:
+                for user_id in user_ids:
+                    if not (course_id and user_id):
+                        return Response({'error': 'course_id and user_id are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-            unique_quizzes = QuizAttemptHistory.objects.filter(
-                course_id=course_id,
-                enrolled_user_id=user_id,
-                complete=True,
-                created_at__in=[quiz['last_attempt'] for quiz in last_attempted_quizzes]
-            )
+                    # Count distinct completed quizzes for the user and course
+                    completed_quizzes_count = QuizAttemptHistory.objects.filter(course_id=course_id, enrolled_user_id=user_id, complete=True).values('quiz_id').distinct().count()
 
-            total_score = 0
-            for quiz_attempt in unique_quizzes:
-                total_score += (quiz_attempt.current_score / (len(quiz_attempt.question_list_order.split(','))-1))
+                    # Calculate total score for the course
+                    last_attempted_quizzes = (
+                        QuizAttemptHistory.objects.filter(course_id=course_id, enrolled_user_id=user_id, complete=True)
+                        .values('quiz_id')
+                        .annotate(last_attempt=Max('created_at'))
+                        .order_by('-last_attempt')
+                    )
 
-            total_quizzes = QuizScore.objects.get(course_id=course_id, enrolled_user_id=user_id).total_quizzes_per_course
+                    unique_quizzes = QuizAttemptHistory.objects.filter(
+                        course_id=course_id,
+                        enrolled_user_id=user_id,
+                        complete=True,
+                        created_at__in=[quiz['last_attempt'] for quiz in last_attempted_quizzes]
+                    )
 
-            if total_quizzes > 0:
-                average_score = (total_score / total_quizzes) * 100
-            else:
-                average_score = 0
+                    total_score = 0
+                    for quiz_attempt in unique_quizzes:
+                        total_score += (quiz_attempt.current_score / (len(quiz_attempt.question_list_order.split(','))-1))
 
-            quiz_score, created = QuizScore.objects.get_or_create(course_id=course_id, enrolled_user_id=user_id, defaults={'total_score_per_course': 0})
-            quiz_score.total_score_per_course = average_score
-            quiz_score.save()
+                    total_quizzes = QuizScore.objects.get(course_id=course_id, enrolled_user_id=user_id).total_quizzes_per_course
 
-            serializer = QuizScoreSerializer(quiz_score)
-            return Response({'message': 'total score per course updated successfully', 'total_score': serializer.data}, status=status.HTTP_200_OK)
+                    if total_quizzes > 0:
+                        average_score = (total_score / total_quizzes) * 100
+                    else:
+                        average_score = 0
+
+                    # Update or create QuizScore object
+                    quiz_score, created = QuizScore.objects.get_or_create(
+                        course_id=course_id,
+                        enrolled_user_id=user_id,
+                        defaults={'completed_quiz_count': 0, 'total_score_per_course': 0}
+                    )
+
+                    quiz_score.completed_quiz_count = completed_quizzes_count
+                    quiz_score.total_score_per_course = average_score
+                    quiz_score.save()
+
+            # Serialize the QuizScore objects
+            quiz_scores = QuizScore.objects.filter(course_id__in=course_ids, enrolled_user_id__in=user_ids)
+            serializer = QuizScoreSerializer(quiz_scores, many=True)
+            return Response({'message': 'Quiz scores per course updated successfully', 'quiz_score_per_course': serializer.data}, status=status.HTTP_200_OK)
+
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-
-
 
 class CourseCompletionStatusPerUserView(APIView):
     """
@@ -287,5 +250,7 @@ class CourseCompletionStatusPerUserView(APIView):
             if isinstance(e, QuizScore.DoesNotExist):
                 return Response({'error': 'Quiz score record not found'}, status=status.HTTP_404_NOT_FOUND)
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 
