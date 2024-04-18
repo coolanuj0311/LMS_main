@@ -51,16 +51,20 @@ class CourseCompletionStatusView(APIView):
                     if existing_entry:
                         continue
 
-                    data = {
-                        'enrolled_user_id': user_id,
-                        'course_id': course_id,
-                        'created_at': timezone.now(),
-                        'updated_at': timezone.now(),
-                        'active': True
-                    }
-                    course_completion_statuses.append(data)
+                    course_completion_status = CourseCompletionStatusPerUser(
+                        enrolled_user_id=user_id,
+                        course_id=course_id,
+                        created_at=timezone.now(),
+                        updated_at=timezone.now(),
+                        active=True,
+                        status="not_started"
 
-            serializer = CourseCompletionStatusSerializer(data=course_completion_statuses, many=True)
+                    )
+                    course_completion_statuses.append(course_completion_status)
+
+            CourseCompletionStatusPerUser.objects.bulk_create(course_completion_status)
+
+            serializer = CourseCompletionStatusSerializer(data=course_completion_status, many=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response({'message': 'course completion status created successfully', 'course_completion_status': serializer.data}, status=status.HTTP_200_OK)
