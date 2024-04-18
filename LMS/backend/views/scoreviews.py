@@ -2,12 +2,10 @@ from django.db import transaction
 from django.db.models import  Max
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from core.custom_permissions import ClientAdminPermission, ClientPermission, SuperAdminOrPostOnly, SuperAdminPermission
+from core.custom_permissions import ClientAdminPermission, SuperAdminOrPostOnly
 from backend.serializers.scoreserializers import CourseCompletionStatusSerializer
 from backend.models.allmodels import (
     CourseCompletionStatusPerUser,
@@ -137,6 +135,7 @@ class QuizScoreView(APIView):
         except Exception as e:
             return 0
 
+
 class QuizScorePerCourseView(APIView):
     """
     POST request
@@ -205,6 +204,7 @@ class QuizScorePerCourseView(APIView):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class CourseCompletionStatusPerUserView(APIView):
     """
