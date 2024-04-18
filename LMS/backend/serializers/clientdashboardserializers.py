@@ -6,7 +6,11 @@ class CourseEnrollmentSerializer(serializers.ModelSerializer):
         model = CourseEnrollment
         fields = ['id', 'user_id', 'course_id', 'active']
 
-class CourseCompletionStatusSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CourseCompletionStatusPerUser
-        fields = ['id', 'enrolled_user_id', 'status', 'active']
+    def validate(self, data):
+        # Add custom validation logic here
+        # For example, you can check if 'active' is a boolean value
+        active = data.get('active')
+        if active is not None and not isinstance(active, bool):
+            raise serializers.ValidationError("Active must be a boolean value")
+        return data
+
