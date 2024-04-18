@@ -3,28 +3,21 @@ from django.urls import path
 
 from django.contrib import admin
 from django.urls import path
-
-
-
-
 from django.urls import path
 from .views.clientdashboardviews import (
     CountCoursesStatusView,
     
     DisplayClientCourseProgressView,
-    
-    
-
 )
 from .views.scoreviews import (
    
     CourseCompletionStatusView,
     QuizScoreView,
    
-    # EmployeeDashboard,
-    CompleteQuizCountView,
-    TotalScorePerCourseView,
+  
+    QuizScorePerCourseView,
     CourseCompletionStatusPerUserView,
+   
     
     
     
@@ -95,17 +88,16 @@ urlpatterns = [
     # quizcontentviews.py views urls
     path('quiz/<int:quiz_id>/question/', QuestionView.as_view(), name='reading-material'), #*
     path('question/<int:question_id>/choices/', ChoicesView.as_view(), name='question-choice'),
-    path("<int:pk>/<slug:quiz_slug>/take/", QuizTake.as_view(), name="quiz_take"), #href="{% url 'quiz_take' pk=course.pk slug=quiz.slug %}
+    path('<int:pk>/quiz/<slug:quiz_slug>/take/', QuizTake.as_view(), name="quiz_take"), #12      href="{% url 'quiz_take' pk=course.pk slug=quiz.slug %}
     #extra
     # path('quiz/redirect/<int:course_id>/', view=dummy_quiz_index, name='quiz_index'),
     path('course-completion-status/', CourseCompletionStatusView.as_view(), name='course_completion_status'),
     path('quiz-score/', QuizScoreView.as_view(), name='quiz_score'),
-    path('complete-quiz-count/', CompleteQuizCountView.as_view(), name='complete_quiz_count'),
-    path('total-score-per-course/', TotalScorePerCourseView.as_view(), name='total_score_per_course'),
+    path('quiz-score-per-course/',QuizScorePerCourseView.as_view(), name='quiz_score_per_course'),
     path('course-completion-status-per-user/', CourseCompletionStatusPerUserView.as_view(), name='course_completion_status_per_user'),
     path('display-client-course-progress/', DisplayClientCourseProgressView.as_view(), name='display_client_course_progress'),
     path('count-courses-status/', CountCoursesStatusView.as_view(), name='count_client_completed_courses'),
-    # path('employee-dashboard/', EmployeeDashboard.as_view(), name='employee_dashboard'),
+   
 
 ]
 
