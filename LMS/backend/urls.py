@@ -1,29 +1,16 @@
-from django.contrib import admin
 from django.urls import path
 
-from django.contrib import admin
-from django.urls import path
-from django.urls import path
 from .views.clientdashboardviews import (
     CountCoursesStatusView,
-    
     DisplayClientCourseProgressView,
 )
+
 from .views.scoreviews import (
-   
     CourseCompletionStatusView,
     QuizScoreView,
-   
-  
     QuizScorePerCourseView,
     CourseCompletionStatusPerUserView,
-   
-    
-    
-    
-
 )
-
 
 from .views.superadmindashboardviews import (
     ActiveRegisteredCustomerCountView,
@@ -37,25 +24,26 @@ from .views.registercourseviews import (
     LMSCustomerListView,
     ManageCourseRegistrationRecordStatusView
 )
+
 from .views.coursesviews import (
     CourseView,
     ManageCourseView,
     FirstVersionActiveCourseListView,
     DerivedVersionActiveCourseListView,
 )
+
 from .views.coursecontentviews import (
     CourseStructureView,
     ReadingMaterialView,
     QuizView,
-
 )
+
 from .views.quizcontentviews import (
     ChoicesView,
     QuestionView,
     QuizTake,
     # dummy_quiz_index,
 )
-
 
 urlpatterns = [
     #courseview.py  views url
