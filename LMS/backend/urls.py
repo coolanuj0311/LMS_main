@@ -18,13 +18,13 @@ from .views.clientdashboardviews import (
 )
 from .views.scoreviews import (
    
-    CreateCourseCompletionStatusPerUserView,
-    CreateQuizScoreView,
+    CourseCompletionStatusView,
+    QuizScoreView,
    
     # EmployeeDashboard,
-    UpdateCompleteQuizCountView,
-    UpdateTotalScorePerCourseView,
-    UpdateCourseCompletionStatusPerUserView,
+    CompleteQuizCountView,
+    TotalScorePerCourseView,
+    CourseCompletionStatusPerUserView,
     
     
     
@@ -98,11 +98,11 @@ urlpatterns = [
     path("<int:pk>/<slug:quiz_slug>/take/", QuizTake.as_view(), name="quiz_take"), #href="{% url 'quiz_take' pk=course.pk slug=quiz.slug %}
     #extra
     # path('quiz/redirect/<int:course_id>/', view=dummy_quiz_index, name='quiz_index'),
-    path('create-course-completion-status/', CreateCourseCompletionStatusPerUserView.as_view(), name='create_course_completion_status'),
-    path('create-quiz-score/', CreateQuizScoreView.as_view(), name='create_quiz_score'),
-    path('update-complete-quiz-count/', UpdateCompleteQuizCountView.as_view(), name='update_complete_quiz_count'),
-    path('update-total-score-per-course/', UpdateTotalScorePerCourseView.as_view(), name='update_total_score_per_course'),
-    path('update-course-completion-status/', UpdateCourseCompletionStatusPerUserView.as_view(), name='update_course_completion_status'),
+    path('course-completion-status/', CourseCompletionStatusView.as_view(), name='course_completion_status'),
+    path('quiz-score/', QuizScoreView.as_view(), name='quiz_score'),
+    path('complete-quiz-count/', CompleteQuizCountView.as_view(), name='complete_quiz_count'),
+    path('total-score-per-course/', TotalScorePerCourseView.as_view(), name='total_score_per_course'),
+    path('course-completion-status-per-user/', CourseCompletionStatusPerUserView.as_view(), name='course_completion_status_per_user'),
     path('display-client-course-progress/', DisplayClientCourseProgressView.as_view(), name='display_client_course_progress'),
     path('count-courses-status/', CountCoursesStatusView.as_view(), name='count_client_completed_courses'),
     # path('employee-dashboard/', EmployeeDashboard.as_view(), name='employee_dashboard'),
