@@ -1,10 +1,7 @@
-
 from rest_framework import  status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-
-from backend.serializers.clientdashboardserializers import CourseCompletionStatusSerializer
+from backend.serializers.scoreserializers import CourseCompletionStatusSerializer
 from core.custom_permissions import ClientPermission
 from core.custom_mixins import ClientMixin
 from backend.models.allmodels import (
@@ -12,10 +9,10 @@ from backend.models.allmodels import (
     CourseEnrollment,
     QuizScore,
 )
-
 from backend.serializers.clientdashboardserializers import CourseEnrollmentSerializer
 
-class DisplayClientCourseProgressView(ClientMixin,APIView):
+
+class DisplayClientCourseProgressView(APIView):
 
     permission_classes = [ClientPermission]
     def get(self, request):
@@ -63,8 +60,9 @@ class DisplayClientCourseProgressView(ClientMixin,APIView):
             return Response({'progress': progress_data, 'enrollments': serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 
-class CountCoursesStatusView(ClientMixin, APIView):
+class CountCoursesStatusView(APIView):
     """
     GET request to count the number of active enrollments and course completion status for a user.
     """
@@ -84,10 +82,6 @@ class CountCoursesStatusView(ClientMixin, APIView):
             completed_courses_count = CourseCompletionStatusPerUser.objects.filter(enrolled_user_id=user_id, status='completed', active=True).count()
             in_progress_courses_count = CourseCompletionStatusPerUser.objects.filter(enrolled_user_id=user_id, status='in_progress', active=True).count()
             not_started_courses_count = CourseCompletionStatusPerUser.objects.filter(enrolled_user_id=user_id, status='not_started', active=True).count()
-
-            # Serialize the queryset results
-            enrollment_serializer = CourseEnrollmentSerializer(active_enrollments_count, many=True)
-            completion_serializer = CourseCompletionStatusSerializer(completed_courses_count, many=True)
 
             return Response({
                 'active_enrollments_count': active_enrollments_count,
