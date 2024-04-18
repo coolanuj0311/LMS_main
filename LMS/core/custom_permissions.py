@@ -13,7 +13,7 @@ allowed_resources:
 6- Dashboard
 '''
 
-class SuperAdminPermission(permissions.BasePermission):
+class SuperAdminPermission(permissions.BasePermission,SuperAdminMixin):
     def has_permission(self, request, view):
         return self.has_super_admin_privileges(request)
     
@@ -25,34 +25,89 @@ class ClientPermission(permissions.BasePermission, ClientMixin):
     def has_permission(self, request, view):
         return self.has_client_privileges(request)
 
-
-class SuperAdminOrAuthorizedOnly(permissions.BasePermission, SuperAdminMixin, ClientAdminMixin):
     
+class SuperAdminOrGetOnly(SuperAdminMixin,permissions.BasePermission):
+    """
+        Permission class which allow users which are not super users to access GET request functionality only
+    """
     def has_permission(self, request, view):
+        print('SuperAdminOrGetOnly')
         if self.has_super_admin_privileges(request):
             return True
+        if request.method == 'GET':
+            # special condition for GET request in  CourseView API
+            # if request.path.startswith('/lms/courses/'):
+            if request.path == '/lms/courses/':
+                print('did path thing worked ')
+                course_id = request.query_params.get('course_id')
+                filtered_display = request.query_params.get('filtered_display')
+                if not course_id or filtered_display in ["inactive", "all"]:
+                    return False
+            return True
+        return False
+    
+class SuperAdminOrPostOnly(permissions.BasePermission):
+    """
+        Permission class which allow users which are not super users to access POST request functionality only
+    """
+    def has_permission(self, request, view):
+        print('all users has access')
+        if request.method == 'POST':
+            # special condition for GET request in  CourseView API
+            # if request.path.startswith('/lms/courses/'):
+            if request.path == ['/lms/complete-quiz-count','/lms/total-score-per-course','/lms/course-completion-status-per-user']:
+                print('did path thing worked ')
+                course_id = request.query_params.get('course_id')
+                filtered_display = request.query_params.get('filtered_display')
+                if not course_id or filtered_display in ["inactive", "all"]:
+                    return False
+            return True
+        return False
 
+
+class CourseContentPermissions(permissions.BasePermission, SuperAdminMixin, ClientAdminMixin):
+    
+    def has_permission(self, request, view):
+        print('CourseContentPermissions')
+        if self.has_super_admin_privileges(request):
+            return True
+        
         if request.method == 'GET':
             user = request.data.get('user')
             course_id = request.kwargs.get('course_id')
-            
-            is_actively_enrolled = CourseEnrollment.objects.filter(course=course_id, user=user['id'], active=True).exists()
-            if is_actively_enrolled:
-                return True
-            
-            if self.has_client_admin_privileges(request):
-                is_actively_registered = CourseRegisterRecord.objects.filter(course=course_id, customer=user['customer'], active=True).exists()
-                if is_actively_registered:
+            content_id = request.query_params.get('content_id')
+            list_mode = request.query_params.get('list', '').lower() == 'true'
+            if content_id or not list_mode :
+                is_actively_enrolled = CourseEnrollment.objects.filter(course=course_id, user=user['id'], active=True).exists()
+                if is_actively_enrolled:
                     return True
-
+                
+                if self.has_client_admin_privileges(request):
+                    is_actively_registered = CourseRegisterRecord.objects.filter(course=course_id, customer=user['customer'], active=True).exists()
+                    if is_actively_registered:
+                        return True
         return False
+
+
+# class SuperAdminOrAuthorizedOnly(permissions.BasePermission, SuperAdminMixin, ClientAdminMixin):
     
-class SuperAdminOrGetOnly(permissions.BasePermission):
-    
-    def has_permission(self, request, view):
-        if self.has_super_admin_privileges(request):
-            return True
-        if request.method == 'GET':
-            return True
-        else:
-            return False
+#     def has_permission(self, request, view):
+#         print('SuperAdminOrAuthorizedOnly')
+#         if self.has_super_admin_privileges(request):
+#             return True
+
+#         if request.method == 'GET':
+#             user = request.data.get('user')
+#             course_id = request.kwargs.get('course_id')
+            
+#             is_actively_enrolled = CourseEnrollment.objects.filter(course=course_id, user=user['id'], active=True).exists()
+#             if is_actively_enrolled:
+#                 return True
+            
+#             if self.has_client_admin_privileges(request):
+#                 is_actively_registered = CourseRegisterRecord.objects.filter(course=course_id, customer=user['customer'], active=True).exists()
+#                 if is_actively_registered:
+#                     return True
+
+#         return False
+
