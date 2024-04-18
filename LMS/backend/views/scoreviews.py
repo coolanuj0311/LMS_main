@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.db.models import Q, Max
+from django.db.models import  Max
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
@@ -17,7 +17,6 @@ from backend.models.allmodels import (
     QuizScore,
 )
 from backend.serializers.scoreserializers import QuizScoreSerializer
-
 
 
 class CourseCompletionStatusView(APIView):
@@ -45,34 +44,31 @@ class CourseCompletionStatusView(APIView):
             if not course_ids or not user_ids:
                 return Response({'error': 'course_id and user_id lists are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-            if not all(isinstance(course_id, int) for course_id in course_ids):
-                return Response({'error': 'Invalid course_id format'}, status=status.HTTP_400_BAD_REQUEST)
-            if not all(isinstance(user_id, int) for user_id in user_ids):
-                return Response({'error': 'Invalid user_id format'}, status=status.HTTP_400_BAD_REQUEST)
-
             course_completion_statuses = []
             for course_id in course_ids:
                 for user_id in user_ids:
-                    if not CourseCompletionStatusPerUser.objects.filter(Q(course_id=course_id) & Q(enrolled_user_id=user_id)).exists():
-                        course_completion_status = CourseCompletionStatusPerUser(
-                            enrolled_user_id=user_id,
-                            course_id=course_id,
-                            status="not_started"
-                        )
-                        course_completion_statuses.append(course_completion_status)
+                    existing_entry = CourseCompletionStatusPerUser.objects.filter(course_id=course_id, enrolled_user_id=user_id).first()
+                    if existing_entry:
+                        continue
 
-            # Serialize the data
+                    data = {
+                        'enrolled_user_id': user_id,
+                        'course_id': course_id,
+                        'created_at': timezone.now(),
+                        'updated_at': timezone.now(),
+                        'active': True
+                    }
+                    course_completion_statuses.append(data)
+
             serializer = CourseCompletionStatusSerializer(data=course_completion_statuses, many=True)
             if serializer.is_valid():
                 serializer.save()
-                return Response({'message': 'Course completion statuses created successfully'}, status=status.HTTP_201_CREATED)
+                return Response({'message': 'course completion status created successfully', 'course_completion_status': serializer.data}, status=status.HTTP_200_OK)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
 
     
 class CompleteQuizCountView(APIView):
