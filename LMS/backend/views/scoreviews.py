@@ -18,6 +18,7 @@ from backend.models.allmodels import CourseEnrollment
 
 class CourseCompletionStatusView(APIView):
     """
+    creation of new instance  course completion status instance
     allowed for client admin
     POST request
     triggered after course enrollment records creation, similar to that one.
@@ -46,11 +47,12 @@ class CourseCompletionStatusView(APIView):
                 for user_id in user_ids:
                     # Check if the user is enrolled in the course
                     if not CourseEnrollment.objects.filter(course_id=course_id, user_id=user_id).exists():
-                        continue
+                        return Response({'error': 'course enrollment not found'}, status=status.HTTP_404_NOT_FOUND)
 
                     existing_entry = CourseCompletionStatusPerUser.objects.filter(course_id=course_id, enrolled_user_id=user_id).first()
                     if existing_entry:
-                        continue
+                        return Response({'error': 'instance already exists'}, status=status.HTTP_200_OK)
+
 
                     course_completion_status = CourseCompletionStatusPerUser(
                         enrolled_user_id=user_id,
@@ -73,6 +75,7 @@ class CourseCompletionStatusView(APIView):
 
 class QuizScoreView(APIView):
     """
+    creation of new instance of quiz score
     allowed for client admin
     POST request
     triggered after course enrollment records creation, similar to that one.
@@ -107,7 +110,7 @@ class QuizScoreView(APIView):
                     existing_score = QuizScore.objects.filter(course_id=course_id, enrolled_user_id=user_id).first()
 
                     if existing_score:
-                        continue
+                        return Response({'message': 'this quiz score already exists '}, status=status.HTTP_200_OK)
 
                     quiz_score = QuizScore(
                         enrolled_user_id=user_id,
@@ -130,7 +133,7 @@ class QuizScoreView(APIView):
 
     def get_total_quizzes_per_course(self, course_id):
         try:
-            total_quizzes = CourseStructure.objects.filter(course_id=course_id, content_type='quiz', active=True).count()
+            total_quizzes = CourseStructure.objects.filter(course_id=course_id, content_type='quiz', active=True, deleted_at__isnull=True).count()
             return total_quizzes
         except Exception as e:
             return 0
