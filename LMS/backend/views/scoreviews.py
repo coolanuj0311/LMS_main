@@ -16,9 +16,22 @@ from backend.models.allmodels import (
 from backend.serializers.scoreserializers import QuizScoreSerializer
 from backend.models.allmodels import CourseEnrollment
 
-
 class CourseCompletionStatusView(APIView):
-   
+    """
+    creation of new instance  course completion status instance
+    allowed for client admin
+    POST request
+    triggered after course enrollment records creation, similar to that one.
+    in request body:
+        list of course_id =[..., ..., ..., ...]
+        list of user_id =[..., ..., ..., ...]
+        each course in list will be mapped for all users in list
+    while creating instance:
+        enrolled_user = request body
+        course = request body
+        status = (default='not started')
+        created_at = (auto_now_add=True)
+    """
     permission_classes = [ClientAdminPermission]
 
     def post(self, request):
@@ -61,7 +74,22 @@ class CourseCompletionStatusView(APIView):
         
 
 class QuizScoreView(APIView):
-   
+    """
+    creation of new instance of quiz score
+    allowed for client admin
+    POST request
+    triggered after course enrollment records creation, similar to that one.
+    in request body:
+        list of course_id =[..., ..., ..., ...]
+        list of user_id =[..., ..., ..., ...]
+        each course in list will be mapped for all users in list
+    while creating instance:
+        enrolled_user = request body
+        course = request body
+        total_quizzes_per_course = calculate in view for course by counting active quizzes in it
+        completed_quiz_count = by default 0
+        total_score_per_course = (default=0)
+    """
     permission_classes = [ClientAdminPermission]
     
     def post(self, request):
@@ -112,7 +140,11 @@ class QuizScoreView(APIView):
 
 
 class QuizScorePerCourseView(APIView):
-   
+    """
+    POST request
+    triggered after quiz attempt history for a course, where user has completed = true.
+    Update metrics including completed_quiz_count and total_score_per_course.
+    """
     permission_classes = [SuperAdminOrPostOnly]
 
     def post(self, request):
@@ -176,9 +208,17 @@ class QuizScorePerCourseView(APIView):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 
 class CourseCompletionStatusPerUserView(APIView):
-   
+    """
+    POST request triggered when 
+    total_quizzes_per_course = completed_quiz_count in quiz score for that user in request
+    if total_quizzes_per_course == completed_quiz_count:
+        completion_status=True and in_progress_status =False
+    if total_quizzes_per_course > completed_quiz_count:
+        completion_status=False and in_progress_status =True
+    """
     permission_classes = [SuperAdminOrPostOnly]
 
     @transaction.atomic
