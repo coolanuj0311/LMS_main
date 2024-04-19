@@ -50,8 +50,8 @@ class DisplayClientCourseProgressView(APIView):
                     progress_data.append({
                         'course_id': enrollment.course_id,
                         'course_name': enrollment.course.title,
-                        'completed_quiz_count': quiz_score.completed_quiz_count,
                         'total_quizzes_per_course': quiz_score.total_quizzes_per_course,
+                        'completed_quiz_count': quiz_score.completed_quiz_count,
                         'progress_percentage': progress_percentage,
                         'completion_status': completion_status
                     })
