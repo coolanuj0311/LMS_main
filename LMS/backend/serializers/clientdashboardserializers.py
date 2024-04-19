@@ -2,6 +2,10 @@ from rest_framework import serializers
 from backend.models.allmodels import CourseEnrollment
 
 class CourseEnrollmentSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    user_id = serializers.IntegerField()
+    course_id = serializers.IntegerField()
+
     class Meta:
         model = CourseEnrollment
         fields = ['id', 'user_id', 'course_id', 'active']
