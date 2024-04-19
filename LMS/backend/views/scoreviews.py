@@ -220,31 +220,34 @@ class CourseCompletionStatusPerUserView(APIView):
     @transaction.atomic
     def post(self, request):
         try:
-            course_id = request.data.get('course_id')
-            user_id = request.data.get('user_id')
+            course_ids = request.data.get('course_id', [])
+            user_ids = request.data.get('user_id', [])
 
-            if not (course_id and user_id):
+            if not (course_ids and user_ids):
                 return Response({'error': 'course_id and user_id are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-            course_completion_status, created = CourseCompletionStatusPerUser.objects.get_or_create(
-                course_id=course_id, enrolled_user_id=user_id
-            )
+            for course_id in course_ids:
+                for user_id in user_ids:
 
-            quiz_score = get_object_or_404(QuizScore, course_id=course_id, enrolled_user_id=user_id)
+                    course_completion_status, created = CourseCompletionStatusPerUser.objects.get_or_create(
+                        course_id=course_id, enrolled_user_id=user_id
+                    )
 
-            if quiz_score.total_quizzes_per_course == quiz_score.completed_quiz_count:
-                course_completion_status.status = "completed"
-                
-            elif quiz_score.total_quizzes_per_course > quiz_score.completed_quiz_count:
-                course_completion_status.status = "in_progress"
-            else:
-                course_completion_status.status = "not_started"
+                    quiz_score = get_object_or_404(QuizScore, course_id=course_id, enrolled_user_id=user_id)
 
-            course_completion_status.save()
+                    if quiz_score.total_quizzes_per_course == quiz_score.completed_quiz_count:
+                        course_completion_status.status = "completed"
+                        
+                    elif quiz_score.total_quizzes_per_course > quiz_score.completed_quiz_count:
+                        course_completion_status.status = "in_progress"
+                    else:
+                        course_completion_status.status = "not_started"
 
-            # Serialize the updated course completion status
-            serializer = CourseCompletionStatusSerializer(course_completion_status)
-            return Response({'message': 'Course completion status updated successfully', 'course_completion_status': serializer.data}, status=status.HTTP_200_OK)
+                    course_completion_status.save()
+
+                    # Serialize the updated course completion status
+                    serializer = CourseCompletionStatusSerializer(course_completion_status)
+                    return Response({'message': 'Course completion status updated successfully', 'course_completion_status': serializer.data}, status=status.HTTP_200_OK)
         
         except Exception as e:
             if isinstance(e, QuizScore.DoesNotExist):
