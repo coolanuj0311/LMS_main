@@ -179,7 +179,7 @@ class QuizScorePerCourseView(APIView):
                     for quiz_attempt in unique_quizzes:
                         total_score += (quiz_attempt.current_score / (len(quiz_attempt.question_list_order.split(','))-1))
 
-                    total_quizzes = QuizScore.objects.get(course_id=course_id, enrolled_user_id=user_id).total_quizzes_per_course
+                    total_quizzes = CourseStructure.objects.filter(course_id=course_id, content_type='quiz', active=True).count()
 
                     if total_quizzes > 0:
                         average_score = (total_score / total_quizzes) * 100
@@ -195,6 +195,7 @@ class QuizScorePerCourseView(APIView):
 
                     quiz_score.completed_quiz_count = completed_quizzes_count
                     quiz_score.total_score_per_course = average_score
+                    quiz_score.total_quizzes_per_course=total_quizzes
                     quiz_score.save()
 
             # Serialize the QuizScore objects
@@ -204,7 +205,6 @@ class QuizScorePerCourseView(APIView):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class CourseCompletionStatusPerUserView(APIView):
     """
