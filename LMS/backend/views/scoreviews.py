@@ -16,6 +16,7 @@ from backend.models.allmodels import (
 from backend.serializers.scoreserializers import QuizScoreSerializer
 from backend.models.allmodels import CourseEnrollment
 
+
 class CourseCompletionStatusView(APIView):
    
     permission_classes = [ClientAdminPermission]
