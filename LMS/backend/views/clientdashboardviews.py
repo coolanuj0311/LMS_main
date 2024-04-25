@@ -1,16 +1,14 @@
 from rest_framework import  status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from backend.serializers.scoreserializers import CourseCompletionStatusSerializer
 from core.custom_permissions import ClientPermission
-from core.custom_mixins import ClientMixin
 from backend.models.allmodels import (
     CourseCompletionStatusPerUser,
     CourseEnrollment,
     QuizScore,
 )
 from backend.serializers.clientdashboardserializers import CountCoursesStatusSerializer, CourseEnrollmentSerializer
-
+from django.db.models import Count
 
 class DisplayClientCourseProgressView(APIView):
 
@@ -74,16 +72,24 @@ class CountCoursesStatusView(APIView):
             if not user_id:
                 return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Check if user exists in CourseEnrollment table
+            if not CourseEnrollment.objects.filter(user_id=user_id).exists():
+                return Response({'error': 'User not found in CourseEnrollment table'}, status=status.HTTP_400_BAD_REQUEST)
+
             # Count active enrollments for the user
             active_enrollments_count = CourseEnrollment.objects.filter(user_id=user_id, active=True).count()
 
             # Count completed, in-progress, and not started courses
-            completed_courses_count = CourseCompletionStatusPerUser.objects.filter(enrolled_user_id=user_id, status='completed', active=True).count()
-            in_progress_courses_count = CourseCompletionStatusPerUser.objects.filter(enrolled_user_id=user_id, status='in_progress', active=True).count()
-            not_started_courses_count = CourseCompletionStatusPerUser.objects.filter(enrolled_user_id=user_id, status='not_started', active=True).count()
+            course_counts = CourseCompletionStatusPerUser.objects.filter(enrolled_user_id=user_id, active=True).values('status').annotate(count=Count('id'))
+
+            completed_courses_count, in_progress_courses_count, not_started_courses_count = (
+            next((item['count'] for item in course_counts if item['status'] == status), 0)
+            for status in ['completed', 'in_progress', 'not_started']
+            )
 
             # Create serializer instance with counts
             serializer = CountCoursesStatusSerializer({
+                'user_id': user_id,
                 'active_enrollments_count': active_enrollments_count,
                 'completed_courses_count': completed_courses_count,
                 'in_progress_courses_count': in_progress_courses_count,
@@ -93,6 +99,7 @@ class CountCoursesStatusView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 
