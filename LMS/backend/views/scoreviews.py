@@ -186,7 +186,7 @@ class QuizScorePerCourseView(APIView):
                     total_quizzes = CourseStructure.objects.filter(course_id=course_id, content_type='quiz', active=True).count()
 
                     if total_quizzes > 0:
-                        average_score = (total_score / total_quizzes) * 100
+                        average_score = (total_score / total_quizzes) * 100.0
                     else:
                         average_score = 0
 
