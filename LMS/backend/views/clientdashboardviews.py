@@ -43,7 +43,7 @@ class DisplayClientCourseProgressView(APIView):
                         completion_status = "in_progress"
                      
                     if quiz_score.total_quizzes_per_course > 0:
-                        progress_percentage = (quiz_score.completed_quiz_count / quiz_score.total_quizzes_per_course) * 100
+                        progress_percentage = (quiz_score.completed_quiz_count / quiz_score.total_quizzes_per_course) * 100.0
                     
                     progress_data.append({
                         'course_id': enrollment.course_id,
