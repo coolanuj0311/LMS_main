@@ -74,7 +74,7 @@ class CountCoursesStatusView(APIView):
 
             # Check if user exists in CourseEnrollment table
             if not CourseEnrollment.objects.filter(user_id=user_id).exists():
-                return Response({'error': 'User not found in CourseEnrollment table'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'No active enrollment found for the user'}, status=status.HTTP_404_NOT_FOUND)
 
             # Count active enrollments for the user
             active_enrollments_count = CourseEnrollment.objects.filter(user_id=user_id, active=True).count()
